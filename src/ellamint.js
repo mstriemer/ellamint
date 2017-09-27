@@ -3,14 +3,14 @@ class Ellamint extends HTMLElement {
     super();
 
     this.props = {};
-    this.hasRendered = false;
+    this.willRender = false;
   }
 
   connectedCallback() {
-    this.setDefaultProps(); this.attachShadow({mode: "open"});
+    this.setDefaultProps();
+    this.attachShadow({mode: "open"});
     this.attachEventHandlers();
-    this.render();
-    this.hasRendered = true;
+    this._render();
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
@@ -21,10 +21,7 @@ class Ellamint extends HTMLElement {
     } else {
       this.props[name] = newValue;
     }
-    if (this.hasRendered) {
-      this.empty();
-      this.render();
-    }
+    this.renderEventually();
   }
 
   attachEventHandlers() {
@@ -43,14 +40,50 @@ class Ellamint extends HTMLElement {
   }
 
   setProperty(updater) {
-    this.props = updater(this.props);
-    this.empty();
-    this.render();
+    const updates = updater(this.props);
+    Object.keys(updates).forEach((name) => {
+      this.setAttribute(name, updates[name]);
+    });
   }
 
-  empty() {
-    while (this.shadowRoot.firstChild) {
-      this.shadowRoot.firstChild.remove();
+  renderEventually() {
+    if (!this.willRender) {
+      this.willRender = true;
+      requestAnimationFrame(() => {
+        this._render();
+        this.willRender = false;
+      });
     }
+  }
+
+  _render() {
+    IncrementalDOM.patch(this.shadowRoot, this._renderElements.bind(this));
+  }
+
+  _renderElements() {
+    this.render().forEach((element) => this._renderElement(...element));
+  }
+
+  _renderElement(tagName, attrs, children) {
+    const { elementOpen, elementClose, text } = IncrementalDOM;
+    const {key, ...attributes} = attrs;
+    const attrList = Object
+      .keys(attributes)
+      .map((attr) => [attr, attributes[attr]])
+      .reduce((a, b) => a.concat(b), []);
+    console.log(tagName, attrList);
+    elementOpen(tagName, key || null, null, ...attrList);
+    children.forEach((child) => {
+      if (Array.isArray(child)) {
+        this._renderElement(...child);
+      } else {
+        text(child);
+      }
+    });
+    elementClose(tagName);
+  }
+
+  el(tagName, attrList, children) {
+    return [tagName, attrList, children];
   }
 }

@@ -26,13 +26,14 @@ class EllamintCounter extends Ellamint {
   render() {
     const { count } = this.props;
 
-    const counter = document.createElement("span");
-    counter.textContent = count;
-    this.shadowRoot.appendChild(counter);
-
-    const button = document.createElement("button");
-    button.textContent = "+";
-    this.shadowRoot.appendChild(button);
+    // This syntax is sort of mimicking JSX so that it can use that later,
+    // but it's really just an array of arrays.
+    return [
+      this.el("span", {}, [
+        this.el("strong", {}, [count]),
+      ]),
+      this.el("button", {"class": "increment"}, ["+"]),
+    ];
   }
 };
 
