@@ -16,6 +16,8 @@ class EllamintCounter extends Ellamint {
   static get propTypes() {
     return {
       count: "int",
+      // FIXME: Remember that FIXME in Ellamint?
+      counters: "int",
     };
   }
 
